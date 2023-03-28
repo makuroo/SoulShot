@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags:
+  - right
+  - left
+  - enemy
+  - ground
+  - platform
+  - bullet
+  - gate
+  - Panel
+  - trap
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - 
+  - 
+  - bg
+  - pillar
+  - ground
+  - platform
+  - player
+  - enemy
+  - gate
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: bg
+    uniqueID: 3449422337
+    locked: 0
+  - name: specialplatform
+    uniqueID: 657549151
+    locked: 0
+  - name: platform
+    uniqueID: 51175123
+    locked: 0
+  - name: pillar
+    uniqueID: 2378807521
+    locked: 0
+  - name: ground
+    uniqueID: 1114610439
+    locked: 0
+  - name: player
+    uniqueID: 4201434041
+    locked: 0
