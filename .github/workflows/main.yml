@@ -61,7 +61,7 @@ jobs:
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add CHANGELOG.md "Soul Shot/ProjectSettings/ProjectVersion.txt"
+          git add CHANGELOG.md "Soul-Shot/ProjectSettings/ProjectVersion.txt"
           git commit -m "[CI] Update version and changelog"
           git push origin main
 
