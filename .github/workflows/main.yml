@@ -49,7 +49,14 @@ jobs:
           echo "Build directory contents:"
           ls -la "Soul-Shot/Builds"
           [ -d "Soul-Shot/Builds/Windows" ] || exit 1
-
+          
+      - name: Debug Build Output
+        run: |
+          echo "Full build tree:"
+          find "Soul-Shot/Builds" -print
+          echo "Disk space:"
+          df -h
+          
       - name: Create Build Archive
         run: |
           cd "Soul-Shot"
