@@ -12,6 +12,8 @@ jobs:
   build:
     name: Build Unity Project
     runs-on: ubuntu-latest
+    outputs:
+      version_tag: ${{ steps.version.outputs.VERSION_TAG }}
     steps:
       # Checkout Repository
       - name: Checkout Repository
@@ -31,7 +33,9 @@ jobs:
           restore-keys: |
             Library-${{ runner.os }}-
 
+      # Build Unity Project
       - name: Build Unity Project
+        id: unity-build
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -41,9 +45,10 @@ jobs:
           projectPath: "Soul-Shot"
           targetPlatform: StandaloneWindows64
           buildName: "Windows"
-          buildsPath: "Builds"          
-          customParameters: -logFile Build.log -batchmode -quit
+          buildsPath: "Builds"
+          customParameters: -logFile Build.log -quit
 
+      # Debugging
       - name: Show Build Log
         if: always()
         run: |
@@ -52,19 +57,15 @@ jobs:
           echo "Build artifacts:"
           find "Soul-Shot/Builds" -type f
 
-      - name: Create Archive
+      # Archive Build
+      - name: Create Build Archive
         if: steps.unity-build.outcome == 'success'
         run: |
           cd "Soul-Shot/Builds"
-          zip -r "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip" Windows
+          zip -r "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip" Windows/*
           echo "BUILD_ZIP=game-build-${{ github.run_number }}.zip" >> $GITHUB_ENV
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: game-build
-          path: ${{ github.workspace }}/game-build-${{ github.run_number }}.zip
-      
+      # Upload single artifact
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -72,7 +73,7 @@ jobs:
           path: ${{ github.workspace }}/game-build-${{ github.run_number }}.zip
           retention-days: 2
 
-      # Version Management (using GameVersion.txt)
+      # Version Management
       - name: Update Game Version
         id: version
         run: |
@@ -81,19 +82,20 @@ jobs:
           [ -f "$GAME_VERSION_FILE" ] || echo "1.0.0" > "$GAME_VERSION_FILE"
           CURRENT_VERSION=$(cat "$GAME_VERSION_FILE")
           NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. -v OFS=. '{
-            if(NF==3){$3+=1}  # Major.Minor.Patch
+            if(NF==3){$3+=1}
             print $0
           }')
           echo "$NEW_VERSION" > "$GAME_VERSION_FILE"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "VERSION_TAG=v$NEW_VERSION" >> $GITHUB_ENV
-          echo "Updated game version from $CURRENT_VERSION to $NEW_VERSION"
+          echo "VERSION_TAG=v$NEW_VERSION" >> $GITHUB_OUTPUT
 
-      # Commit Version Update
+      # Commit Changes
       - name: Commit Version Change
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
+          git fetch origin
+          git rebase origin/main
           git add "Soul-Shot/Assets/Resources/GameVersion.txt"
           git commit -m "[CI] Update version to ${{ steps.version.outputs.NEW_VERSION }}"
           git push origin main
@@ -103,13 +105,14 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      # Download the zipped build
+      # Download Artifact
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
           name: game-build
           path: release-files
 
+      # Create Release
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
