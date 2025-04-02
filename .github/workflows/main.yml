@@ -24,9 +24,11 @@ jobs:
       - name: Set Up Unity Builder
         uses: game-ci/unity-builder@v2
         with:
-          unityVersion: 6000.0.30f1  # Change to your Unity version
-          targetPlatform: StandaloneWindows64  # Change to your target platform
+          unityVersion: 2022.3.5f1  # Change to your Unity version
+          targetPlatform: StandaloneWindows64
           allowDirtyBuild: true
+        env:
+          UNITY_LICENSE: ""  # Empty license variable to use free mode
 
       - name: Generate Changelog
         run: |
@@ -64,3 +66,7 @@ jobs:
           name: Release v${{ github.run_number }}
           body_path: CHANGELOG.md
           files: build/**/*
+          
+
+
+  
