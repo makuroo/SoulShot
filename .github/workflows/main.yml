@@ -31,56 +31,36 @@ jobs:
           restore-keys: |
             Library-${{ runner.os }}-
 
-      # Build Unity Project
       - name: Build Unity Project
         uses: game-ci/unity-builder@v4
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        id: unity-build
         with:
           projectPath: "Soul-Shot"
           targetPlatform: StandaloneWindows64
           buildName: "Windows"
-          buildsPath: "Builds"  # Now goes to Soul-Shot/Builds/Windows
+          buildsPath: "Builds"
+          customParameters: -logFile Build.log -batchmode -quit
 
-      - name: Verify Build Directory
+      - name: Show Build Log
+        if: always()
         run: |
-          echo "Build directory contents:"
-          ls -la "Soul-Shot/Builds"
-          [ -d "Soul-Shot/Builds/Windows" ] || exit 1
-          
-      - name: Debug Build Output
+          echo "Build log:"
+          cat "Soul-Shot/Build.log" || echo "No log file found"
+          echo "Build artifacts:"
+          find "Soul-Shot/Builds" -type f
+
+      - name: Create Archive
+        if: steps.unity-build.outcome == 'success'
         run: |
-          echo "Full build tree:"
-          find "Soul-Shot/Builds" -print
-          echo "Disk space:"
-          df -h
-          
-      - name: Create Build Archive
-        run: |
-          cd "Soul-Shot"
-          echo "Current directory: $(pwd)"
-          echo "Build directory contents:"
-          ls -la Builds/
-          
-          # Verify Windows build directory exists
-          if [ -d "Builds/Windows" ]; then
-            echo "Windows build files:"
-            ls -la Builds/Windows/
-            
-            # Create zip with proper contents
-            (cd Builds && zip -r "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip" Windows)
-            
-            # Verify zip contents
-            echo "Zip file contents:"
-            unzip -l "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip"
-          else
-            echo "Error: Windows build directory not found"
-            echo "Found these directories instead:"
-            find Builds -type d
-            exit 1
-          fi
+          cd "Soul-Shot/Builds"
+          zip -r "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip" Windows
+          echo "BUILD_ZIP=game-build-${{ github.run_number }}.zip" >> $GITHUB_ENV
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-build
+          path: ${{ github.workspace }}/game-build-${{ github.run_number }}.zip
       
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
