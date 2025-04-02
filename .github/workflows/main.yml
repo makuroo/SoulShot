@@ -54,17 +54,24 @@ jobs:
         run: |
           cd "Soul-Shot"
           echo "Current directory: $(pwd)"
-          echo "Build files to zip:"
-          ls -la Builds/Windows/
+          echo "Build directory contents:"
+          ls -la Builds/
           
-          zip -r "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip" Builds/Windows/
-          
-          if [ -f "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip" ]; then
-            echo "BUILD_ZIP=game-build-${{ github.run_number }}.zip" >> $GITHUB_ENV
-            echo "Zip contents:"
+          # Verify Windows build directory exists
+          if [ -d "Builds/Windows" ]; then
+            echo "Windows build files:"
+            ls -la Builds/Windows/
+            
+            # Create zip with proper contents
+            (cd Builds && zip -r "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip" Windows)
+            
+            # Verify zip contents
+            echo "Zip file contents:"
             unzip -l "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip"
           else
-            echo "Error: Failed to create zip file"
+            echo "Error: Windows build directory not found"
+            echo "Found these directories instead:"
+            find Builds -type d
             exit 1
           fi
       
