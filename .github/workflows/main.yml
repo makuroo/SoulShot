@@ -16,13 +16,13 @@ jobs:
 
       # Change Working Directory to 'Soul Shot'
       - name: Change Working Directory
-        run: cd "Soul Shot"
+        run: cd "Soul-Shot"
 
       # Cache Library Folder
       - name: Cache Library Folder
         uses: actions/cache@v3
         with:
-          path: "Soul Shot/Library"
+          path: "Soul-Shot/Library"
           key: Library-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
             Library-${{ runner.os }}-
@@ -35,7 +35,7 @@ jobs:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
-          projectPath: "Soul Shot"  # Specify the project path explicitly
+          projectPath: "Soul-Shot"  # Specify the project path explicitly
           targetPlatform: StandaloneWindows64
           allowDirtyBuild: true
 
@@ -50,7 +50,7 @@ jobs:
       # Auto-Increment Version from ProjectVersion.txt
       - name: Auto-Increment Version
         run: |
-          VERSION_FILE=Soul\ Shot/ProjectSettings/ProjectVersion.txt
+          VERSION_FILE="Soul-Shot/ProjectSettings/ProjectVersion.txt"
           VERSION=$(grep 'm_EditorVersion: ' $VERSION_FILE | awk '{print $2}')
           NEW_VERSION=$(echo $VERSION | awk -F. -v OFS=. '{$NF += 1; print}')
           sed -i "s/m_EditorVersion: $VERSION/m_EditorVersion: $NEW_VERSION/g" $VERSION_FILE
