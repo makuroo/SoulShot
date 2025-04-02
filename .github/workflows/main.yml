@@ -50,7 +50,7 @@ jobs:
       # Auto-Increment Version from ProjectVersion.txt
       - name: Auto-Increment Version
         run: |
-          VERSION_FILE="Soul Shot/ProjectSettings/ProjectVersion.txt"
+          VERSION_FILE=Soul\ Shot/ProjectSettings/ProjectVersion.txt
           VERSION=$(grep 'm_EditorVersion: ' $VERSION_FILE | awk '{print $2}')
           NEW_VERSION=$(echo $VERSION | awk -F. -v OFS=. '{$NF += 1; print}')
           sed -i "s/m_EditorVersion: $VERSION/m_EditorVersion: $NEW_VERSION/g" $VERSION_FILE
