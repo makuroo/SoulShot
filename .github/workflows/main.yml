@@ -113,15 +113,12 @@ jobs:
           name: game-build
           path: release-files
 
-      # Create GitHub Release
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.VERSION_TAG }}
-          name: "SoulShot ${{ env.VERSION_TAG }}"
-          body: |
-            Automatic build for commit ${{ github.sha }}
-            Build Number: ${{ github.run_number }}
+          tag_name: ${{ needs.build.outputs.version_tag }}
+          name: "Release ${{ needs.build.outputs.version_tag }}"
+          body: "Automated build for version ${{ needs.build.outputs.version_tag }}"
           files: release-files/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
