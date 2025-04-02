@@ -36,13 +36,13 @@ public class Movement : MonoBehaviour
             animator.SetInteger("hp", 1);
         }
 
-        if (playerRb.velocity.y < 0)
+        if (playerRb.linearVelocity.y < 0)
         {
-            playerRb.velocity += (fallMultiplier - 1) * Physics2D.gravity.y * Time.deltaTime * Vector2.up;
+            playerRb.linearVelocity += (fallMultiplier - 1) * Physics2D.gravity.y * Time.deltaTime * Vector2.up;
         }
-        else if (playerRb.velocity.y > 0 && !Input.GetKey(KeyCode.W))
+        else if (playerRb.linearVelocity.y > 0 && !Input.GetKey(KeyCode.W))
         {
-            playerRb.velocity += (lowJumpMultiplier - 1) * Physics2D.gravity.y * Time.deltaTime * Vector2.up;
+            playerRb.linearVelocity += (lowJumpMultiplier - 1) * Physics2D.gravity.y * Time.deltaTime * Vector2.up;
         }
     }
 
@@ -86,7 +86,7 @@ public class Movement : MonoBehaviour
         
         if (Input.GetKeyDown(KeyCode.W) && !state.isGrounded)
         {
-            playerRb.velocity = Vector2.up * jumpVelocity;
+            playerRb.linearVelocity = Vector2.up * jumpVelocity;
             state.isGrounded = true;
         }
     }

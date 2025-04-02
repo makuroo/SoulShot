@@ -20,11 +20,11 @@ public class enemymove : MonoBehaviour
     {
         if (isFlip)
         {
-            enemy.velocity = new Vector2(-speed, 0f);
+            enemy.linearVelocity = new Vector2(-speed, 0f);
         }
         else
         {
-            enemy.velocity = new Vector2(speed, 0f);
+            enemy.linearVelocity = new Vector2(speed, 0f);
         }
     }
 
@@ -33,7 +33,7 @@ public class enemymove : MonoBehaviour
         if (collision.gameObject.CompareTag("left"))
         {
             isFlip = !isFlip;
-            transform.localScale = new Vector2(  Mathf.Sign(enemy.velocity.x), transform.localScale.y);
+            transform.localScale = new Vector2(  Mathf.Sign(enemy.linearVelocity.x), transform.localScale.y);
         }
         
     }
