@@ -50,7 +50,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-output
-          path: Soul-Shot/build/StandaloneWindows64
+          path: Soul-Shot/build
           retention-days: 1  # Only keep artifacts for 1 day
 
       # Generate Changelog
