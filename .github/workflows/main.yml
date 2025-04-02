@@ -60,24 +60,35 @@ jobs:
           git log --pretty=format:"- %s" $(git describe --tags --abbrev=0)..HEAD >> CHANGELOG.md
           cat CHANGELOG.md
 
-      # Auto-Increment Version
-      - name: Auto-Increment Version
+      - name: Setup Game Version File
+        run: |
+          mkdir -p "Soul-Shot/Assets/Resources"
+          GAME_VERSION_FILE="Soul-Shot/Assets/Resources/GameVersion.txt"
+          if [ ! -f "$GAME_VERSION_FILE" ]; then
+            echo "1.0.0" > "$GAME_VERSION_FILE"
+          fi
+      
+      - name: Auto-Increment Game Version
         id: version
         run: |
-          VERSION_FILE="Soul-Shot/ProjectSettings/ProjectVersion.txt"
-          VERSION=$(grep 'm_EditorVersion: ' $VERSION_FILE | awk '{print $2}')
-          NEW_VERSION=$(echo $VERSION | awk -F. -v OFS=. '{$NF += 1; print}')
-          sed -i "s/m_EditorVersion: $VERSION/m_EditorVersion: $NEW_VERSION/g" $VERSION_FILE
+          GAME_VERSION_FILE="Soul-Shot/Assets/Resources/GameVersion.txt"
+          CURRENT_VERSION=$(cat $GAME_VERSION_FILE)
+          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{
+            if(NF==3){$3+=1}  # Major.Minor.Patch
+            else if(NF==2){$2+=1}  # Major.Minor
+            else if(NF==1){$1+=1}  # Major
+            print $0
+          }')
+          echo $NEW_VERSION > $GAME_VERSION_FILE
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "Updated version: $NEW_VERSION"
-
-      # Commit & Push Version and Changelog Changes
+          echo "Updated game version from $CURRENT_VERSION to $NEW_VERSION"
+      
       - name: Commit & Push Changes
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add CHANGELOG.md "Soul-Shot/ProjectSettings/ProjectVersion.txt"
-          git commit -m "[CI] Update version to ${{ steps.version.outputs.NEW_VERSION }}"
+          git add "Soul-Shot/Assets/Resources/GameVersion.txt"
+          git commit -m "[CI] Update game version to ${{ steps.version.outputs.NEW_VERSION }}"
           git push origin main
 
   release:
