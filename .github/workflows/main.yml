@@ -1,0 +1,66 @@
+name: Unity Build & Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Unity Project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Cache Library Folder
+        uses: actions/cache@v3
+        with:
+          path: Library
+          key: Library-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            Library-${{ runner.os }}-
+
+      - name: Set Up Unity Builder
+        uses: game-ci/unity-builder@v2
+        with:
+          unityVersion: 6000.0.30f1  # Change to your Unity version
+          targetPlatform: StandaloneWindows64  # Change to your target platform
+          allowDirtyBuild: true
+
+      - name: Generate Changelog
+        run: |
+          echo "# Changelog" > CHANGELOG.md
+          echo "## $(date '+%Y-%m-%d')" >> CHANGELOG.md
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0)..HEAD >> CHANGELOG.md
+          cat CHANGELOG.md
+
+      - name: Auto-Increment Version
+        run: |
+          VERSION_FILE="ProjectSettings/ProjectVersion.txt"
+          VERSION=$(grep 'm_EditorVersion: ' $VERSION_FILE | awk '{print $2}')
+          NEW_VERSION=$(echo $VERSION | awk -F. -v OFS=. '{$NF += 1; print}')
+          sed -i "s/m_EditorVersion: $VERSION/m_EditorVersion: $NEW_VERSION/g" $VERSION_FILE
+          echo "Updated version: $NEW_VERSION"
+
+      - name: Commit & Push Changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add CHANGELOG.md ProjectSettings/ProjectVersion.txt
+          git commit -m "[CI] Update version and changelog"
+          git push origin main
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Unity-Build
+          path: build
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body_path: CHANGELOG.md
+          files: build/**/*
