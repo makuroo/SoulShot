@@ -28,8 +28,10 @@ jobs:
           targetPlatform: StandaloneWindows64
           allowDirtyBuild: true
         env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}  # Empty license variable to use free mode
-
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          
       - name: Generate Changelog
         run: |
           echo "# Changelog" > CHANGELOG.md
