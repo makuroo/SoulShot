@@ -17,10 +17,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Change Working Directory
+      # Setup Build Directory
+      - name: Prepare Build Environment
         run: |
-          cd "Soul-Shot"
-          mkdir -p build/StandaloneWindows64
+          mkdir -p "Soul-Shot/Builds/Windows"
 
       # Cache Library Folder
       - name: Cache Library Folder
@@ -33,7 +33,6 @@ jobs:
 
       # Build Unity Project
       - name: Build Unity Project
-        id: build
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -42,27 +41,33 @@ jobs:
         with:
           projectPath: "Soul-Shot"
           targetPlatform: StandaloneWindows64
-          buildName: "SoulShot"
-          buildsPath: "build"
+          buildName: "Windows"
+          buildsPath: "Builds"  # Now goes to Soul-Shot/Builds/Windows
 
-      # Upload build artifacts (critical fix here)
-      - name: Upload Build Artifacts
+      # Verify Build Output
+      - name: Verify Build Files
+        run: |
+          echo "Build artifacts:"
+          ls -la "Soul-Shot/Builds/Windows"
+          [ -f "Soul-Shot/Builds/Windows/SoulShot.exe" ] || exit 1
+
+      # Compress Build Artifacts
+      - name: Create Build Archive
+        run: |
+          cd "Soul-Shot/Builds"
+          zip -r ../game-build-${{ github.run_number }}.zip Windows/*
+          echo "BUILD_ZIP=game-build-${{ github.run_number }}.zip" >> $GITHUB_ENV
+
+      # Upload Artifact (temporary storage between jobs)
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-output
-          path: Soul-Shot/build
-          retention-days: 1  # Only keep artifacts for 1 day
+          name: game-build
+          path: Soul-Shot/game-build-${{ github.run_number }}.zip
+          retention-days: 1
 
-      # Generate Changelog
-      - name: Generate Changelog
-        run: |
-          echo "# Changelog" > CHANGELOG.md
-          echo "## $(date '+%Y-%m-%d')" >> CHANGELOG.md
-          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0)..HEAD >> CHANGELOG.md
-          cat CHANGELOG.md
-
-      # Auto-Increment Version (using new GameVersion.txt approach)
-      - name: Auto-Increment Game Version
+      # Version Management (using GameVersion.txt)
+      - name: Update Game Version
         id: version
         run: |
           mkdir -p "Soul-Shot/Assets/Resources"
@@ -70,22 +75,21 @@ jobs:
           [ -f "$GAME_VERSION_FILE" ] || echo "1.0.0" > "$GAME_VERSION_FILE"
           CURRENT_VERSION=$(cat "$GAME_VERSION_FILE")
           NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. -v OFS=. '{
-            if(NF==3){$3+=1}
-            else if(NF==2){$2+=1}
-            else if(NF==1){$1+=1}
+            if(NF==3){$3+=1}  # Major.Minor.Patch
             print $0
           }')
           echo "$NEW_VERSION" > "$GAME_VERSION_FILE"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION_TAG=v$NEW_VERSION" >> $GITHUB_ENV
           echo "Updated game version from $CURRENT_VERSION to $NEW_VERSION"
 
-      # Commit & Push Version Changes
-      - name: Commit & Push Changes
+      # Commit Version Update
+      - name: Commit Version Change
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
           git add "Soul-Shot/Assets/Resources/GameVersion.txt"
-          git commit -m "[CI] Bump version to ${{ steps.version.outputs.NEW_VERSION }}"
+          git commit -m "[CI] Update version to ${{ steps.version.outputs.NEW_VERSION }}"
           git push origin main
 
   release:
@@ -93,25 +97,22 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      # Download the build artifacts (fixed path)
-      - name: Download Build Artifacts
+      # Download the zipped build
+      - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
-          name: build-output
+          name: game-build
           path: release-files
 
-      # Verify the files exist (debugging step)
-      - name: List Release Files
-        run: ls -R release-files
-
       # Create GitHub Release
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ needs.build.outputs.steps.version.outputs.NEW_VERSION }}
-          name: "SoulShot v${{ needs.build.outputs.steps.version.outputs.NEW_VERSION }}"
-          body_path: CHANGELOG.md
-          files: |
-            release-files/**
+          tag_name: ${{ env.VERSION_TAG }}
+          name: "SoulShot ${{ env.VERSION_TAG }}"
+          body: |
+            Automatic build for commit ${{ github.sha }}
+            Build Number: ${{ github.run_number }}
+          files: release-files/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
