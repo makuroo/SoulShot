@@ -10,20 +10,24 @@ jobs:
     name: Build Unity Project
     runs-on: ubuntu-latest
     steps:
+      # Checkout Repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # Change Working Directory to 'Soul Shot'
       - name: Change Working Directory
-        run: cd Soul Shot
+        run: cd "Soul Shot"
 
+      # Cache Library Folder
       - name: Cache Library Folder
         uses: actions/cache@v3
         with:
-          path: Library
+          path: "Soul Shot/Library"
           key: Library-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
             Library-${{ runner.os }}-
 
+      # Set Up Unity Builder (build Unity project)
       - name: Set Up Unity Builder
         uses: game-ci/unity-builder@v4
         env:
@@ -32,8 +36,9 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           targetPlatform: StandaloneWindows64
-          allowDirtyBuild: tru
-          
+          allowDirtyBuild: true
+
+      # Generate Changelog
       - name: Generate Changelog
         run: |
           echo "# Changelog" > CHANGELOG.md
@@ -41,36 +46,31 @@ jobs:
           git log --pretty=format:"- %s" $(git describe --tags --abbrev=0)..HEAD >> CHANGELOG.md
           cat CHANGELOG.md
 
+      # Auto-Increment Version from ProjectVersion.txt
       - name: Auto-Increment Version
         run: |
-          VERSION_FILE="ProjectSettings/ProjectVersion.txt"
+          VERSION_FILE="Soul Shot/ProjectSettings/ProjectVersion.txt"
           VERSION=$(grep 'm_EditorVersion: ' $VERSION_FILE | awk '{print $2}')
           NEW_VERSION=$(echo $VERSION | awk -F. -v OFS=. '{$NF += 1; print}')
           sed -i "s/m_EditorVersion: $VERSION/m_EditorVersion: $NEW_VERSION/g" $VERSION_FILE
           echo "Updated version: $NEW_VERSION"
 
+      # Commit & Push Version and Changelog Changes
       - name: Commit & Push Changes
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add CHANGELOG.md ProjectSettings/ProjectVersion.txt
+          git add CHANGELOG.md "Soul Shot/ProjectSettings/ProjectVersion.txt"
           git commit -m "[CI] Update version and changelog"
           git push origin main
 
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Unity-Build
-          path: build
-
+      # Create GitHub Release and Upload Artifact
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ github.run_number }}
-          name: Release v${{ github.run_number }}
-          body_path: CHANGELOG.md
-          files: build/**/*
-          
-
-
-  
+          tag_name: v${{ steps.auto_increment_version.outputs.version }}  # Use the new version as the tag
+          name: Release v${{ steps.auto_increment_version.outputs.version }}
+          body_path: CHANGELOG.md  # Use the changelog as release body
+          files: "Soul Shot/build/**/*"  # Upload the build artifact to the release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
