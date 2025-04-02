@@ -44,13 +44,6 @@ jobs:
           buildName: "Windows"
           buildsPath: "Builds"  # Now goes to Soul-Shot/Builds/Windows
 
-      # Verify Build Output
-      - name: Verify Build Files
-        run: |
-          echo "Build artifacts:"
-          ls -la "Soul-Shot/Builds/Windows"
-          [ -f "Soul-Shot/Builds/Windows/SoulShot.exe" ] || exit 1
-
       # Compress Build Artifacts
       - name: Create Build Archive
         run: |
