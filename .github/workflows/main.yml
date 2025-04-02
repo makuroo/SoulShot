@@ -46,7 +46,7 @@ jobs:
           targetPlatform: StandaloneWindows64
           buildName: "Windows"
           buildsPath: "Builds"
-          customParameters: -logFile Build.log -quit
+          customParameters: -logFile Build.log -projectPath "Soul-Shot"
 
       # Debugging
       - name: Show Build Log
