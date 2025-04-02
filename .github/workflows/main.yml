@@ -53,20 +53,26 @@ jobs:
       - name: Create Build Archive
         run: |
           cd "Soul-Shot"
-          mkdir -p dist
-          cp -r Builds/Windows dist/
-          cd dist
-          zip -r ../../game-build-${{ github.run_number }}.zip .
-          echo "BUILD_ZIP=game-build-${{ github.run_number }}.zip" >> $GITHUB_ENV
-          echo "Zipped contents:"
-          unzip -l ../../game-build-${{ github.run_number }}.zip
-
-      # Upload Artifact (temporary storage between jobs)
+          echo "Current directory: $(pwd)"
+          echo "Build files to zip:"
+          ls -la Builds/Windows/
+          
+          zip -r "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip" Builds/Windows/
+          
+          if [ -f "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip" ]; then
+            echo "BUILD_ZIP=game-build-${{ github.run_number }}.zip" >> $GITHUB_ENV
+            echo "Zip contents:"
+            unzip -l "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip"
+          else
+            echo "Error: Failed to create zip file"
+            exit 1
+          fi
+      
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: game-build
-          path: Soul-Shot/game-build-${{ github.run_number }}.zip
+          path: ${{ github.workspace }}/game-build-${{ github.run_number }}.zip
           retention-days: 1
 
       # Version Management (using GameVersion.txt)
