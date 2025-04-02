@@ -44,12 +44,22 @@ jobs:
           buildName: "Windows"
           buildsPath: "Builds"  # Now goes to Soul-Shot/Builds/Windows
 
-      # Compress Build Artifacts
+      - name: Verify Build Directory
+        run: |
+          echo "Build directory contents:"
+          ls -la "Soul-Shot/Builds"
+          [ -d "Soul-Shot/Builds/Windows" ] || exit 1
+
       - name: Create Build Archive
         run: |
-          cd "Soul-Shot/Builds"
-          zip -r ../game-build-${{ github.run_number }}.zip Windows/*
+          cd "Soul-Shot"
+          mkdir -p dist
+          cp -r Builds/Windows dist/
+          cd dist
+          zip -r ../../game-build-${{ github.run_number }}.zip .
           echo "BUILD_ZIP=game-build-${{ github.run_number }}.zip" >> $GITHUB_ENV
+          echo "Zipped contents:"
+          unzip -l ../../game-build-${{ github.run_number }}.zip
 
       # Upload Artifact (temporary storage between jobs)
       - name: Upload Build Artifact
