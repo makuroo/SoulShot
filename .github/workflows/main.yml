@@ -45,12 +45,13 @@ jobs:
           buildName: "SoulShot"
           buildsPath: "build"
 
-      # Upload build artifacts (temporary storage)
+      # Upload build artifacts (critical fix here)
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-output
           path: Soul-Shot/build/StandaloneWindows64
+          retention-days: 1  # Only keep artifacts for 1 day
 
       # Generate Changelog
       - name: Generate Changelog
@@ -60,35 +61,31 @@ jobs:
           git log --pretty=format:"- %s" $(git describe --tags --abbrev=0)..HEAD >> CHANGELOG.md
           cat CHANGELOG.md
 
-      - name: Setup Game Version File
-        run: |
-          mkdir -p "Soul-Shot/Assets/Resources"
-          GAME_VERSION_FILE="Soul-Shot/Assets/Resources/GameVersion.txt"
-          if [ ! -f "$GAME_VERSION_FILE" ]; then
-            echo "1.0.0" > "$GAME_VERSION_FILE"
-          fi
-      
+      # Auto-Increment Version (using new GameVersion.txt approach)
       - name: Auto-Increment Game Version
         id: version
         run: |
+          mkdir -p "Soul-Shot/Assets/Resources"
           GAME_VERSION_FILE="Soul-Shot/Assets/Resources/GameVersion.txt"
-          CURRENT_VERSION=$(cat $GAME_VERSION_FILE)
-          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{
-            if(NF==3){$3+=1}  # Major.Minor.Patch
-            else if(NF==2){$2+=1}  # Major.Minor
-            else if(NF==1){$1+=1}  # Major
+          [ -f "$GAME_VERSION_FILE" ] || echo "1.0.0" > "$GAME_VERSION_FILE"
+          CURRENT_VERSION=$(cat "$GAME_VERSION_FILE")
+          NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. -v OFS=. '{
+            if(NF==3){$3+=1}
+            else if(NF==2){$2+=1}
+            else if(NF==1){$1+=1}
             print $0
           }')
-          echo $NEW_VERSION > $GAME_VERSION_FILE
+          echo "$NEW_VERSION" > "$GAME_VERSION_FILE"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "Updated game version from $CURRENT_VERSION to $NEW_VERSION"
-      
+
+      # Commit & Push Version Changes
       - name: Commit & Push Changes
         run: |
           git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
+          git config --global user.email "actions@github.com"
           git add "Soul-Shot/Assets/Resources/GameVersion.txt"
-          git commit -m "[CI] Update game version to ${{ steps.version.outputs.NEW_VERSION }}"
+          git commit -m "[CI] Bump version to ${{ steps.version.outputs.NEW_VERSION }}"
           git push origin main
 
   release:
@@ -96,12 +93,16 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      # Download the build artifacts
+      # Download the build artifacts (fixed path)
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-output
           path: release-files
+
+      # Verify the files exist (debugging step)
+      - name: List Release Files
+        run: ls -R release-files
 
       # Create GitHub Release
       - name: Create GitHub Release
