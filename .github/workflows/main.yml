@@ -73,7 +73,7 @@ jobs:
         with:
           name: game-build
           path: ${{ github.workspace }}/game-build-${{ github.run_number }}.zip
-          retention-days: 1
+          retention-days: 2
 
       # Version Management (using GameVersion.txt)
       - name: Update Game Version
