@@ -69,6 +69,20 @@ jobs:
           ls -R "Soul-Shot/Builds" || echo "No build directory found!"
           find "Soul-Shot/Builds" -type f || echo "No files found in Builds!"
 
+      - name: Create Build Archive
+        if: steps.unity-build.outcome == 'success'
+        run: |
+          BUILD_DIR="Soul-Shot/Builds/StandaloneWindows64"
+          if [ -d "$BUILD_DIR" ] && [ "$(ls -A $BUILD_DIR)" ]; then
+            echo "✅ Build found! Creating zip archive..."
+            cd "Soul-Shot/Builds"
+            zip -r "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip" StandaloneWindows64/*
+            echo "BUILD_ZIP=game-build-${{ github.run_number }}.zip" >> $GITHUB_ENV
+          else
+            echo "❌ No build output found in $BUILD_DIR!"
+            exit 1
+          fi
+
       # Upload Build Artifact
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
