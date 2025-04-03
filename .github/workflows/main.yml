@@ -49,26 +49,6 @@ jobs:
           echo "Checking build directory..."
           ls -R "Soul-Shot/Builds" || echo "No build directory found!"
 
-      # Archive Build
-      - name: Create Build Archive
-        if: steps.unity-build.outcome == 'success'
-        run: |
-          if [ -d "Soul-Shot/Builds/Windows" ]; then
-            cd "Soul-Shot/Builds"
-            zip -r "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip" Windows/*
-            echo "BUILD_ZIP=game-build-${{ github.run_number }}.zip" >> $GITHUB_ENV
-          else
-            echo "No build output found in Windows/ folder!"
-            exit 1
-          fi
-
-        # Debugging: Check if Unity actually built the game
-      - name: Debug Build Output
-        run: |
-          echo "Checking if Unity created the build..."
-          ls -R "Soul-Shot/Builds" || echo "No build directory found!"
-          find "Soul-Shot/Builds" -type f || echo "No files found in Builds!"
-
       - name: Create Build Archive
         if: steps.unity-build.outcome == 'success'
         run: |
@@ -82,6 +62,13 @@ jobs:
             echo "❌ No build output found in $BUILD_DIR!"
             exit 1
           fi
+
+        # Debugging: Check if Unity actually built the game
+      - name: Debug Build Output
+        run: |
+          echo "Checking if Unity created the build..."
+          ls -R "Soul-Shot/Builds" || echo "No build directory found!"
+          find "Soul-Shot/Builds" -type f || echo "No files found in Builds!"
 
       # Upload Build Artifact
       - name: Upload Build Artifact
