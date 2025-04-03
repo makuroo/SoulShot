@@ -115,18 +115,16 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      # Download Artifact
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
           name: game-build
           path: release-files
 
-      # Create Release
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ needs.build.outputs.version_tag }}
+          tag_name: "${{ needs.build.outputs.version_tag }}"  # Ensure tag is correctly referenced
           name: "Release ${{ needs.build.outputs.version_tag }}"
           body: "Automated build for version ${{ needs.build.outputs.version_tag }}"
           files: release-files/*.zip
