@@ -28,7 +28,12 @@ jobs:
           restore-keys: |
             Library-${{ runner.os }}-
 
-      # Build Unity Project
+      - name: Get Project Name from Unity Settings
+        id: get-project-name
+        run: |
+          PROJECT_NAME=$(grep -Po '(?<=productName: ).*' Soul-Shot/ProjectSettings/ProjectSettings.asset | tr -d '\r')
+          echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
+
       - name: Build Unity Project
         id: unity-build
         uses: game-ci/unity-builder@v4
@@ -39,7 +44,7 @@ jobs:
         with:
           projectPath: "Soul-Shot"
           targetPlatform: StandaloneWindows64
-          buildName: "Windows"
+          buildName: "${{ env.PROJECT_NAME }}"  # Use Unity project name as build name
           buildsPath: "Soul-Shot/Builds"
           customParameters: -logFile Build.log
 
