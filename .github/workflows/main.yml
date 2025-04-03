@@ -126,9 +126,9 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.VERSION_TAG }}
-          name: "Release ${{ env.VERSION_TAG }}"
-          body: "Automated build for version ${{ env.VERSION_TAG }}"
+          tag_name: ${{ needs.build.outputs.version_tag }}
+          name: "Release ${{ needs.build.outputs.version_tag }}"
+          body: "Automated build for version ${{ needs.build.outputs.version_tag }}"
           files: release-files/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
