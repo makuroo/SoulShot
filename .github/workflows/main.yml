@@ -89,13 +89,16 @@ jobs:
           if [ ! -f "$GAME_VERSION_FILE" ]; then
             echo "1.0.0" > "$GAME_VERSION_FILE"
           fi
-
+          
           CURRENT_VERSION=$(cat "$GAME_VERSION_FILE")
           NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. -v OFS=. '{$NF += 1; print}')
           
           echo "$NEW_VERSION" > "$GAME_VERSION_FILE"
+          
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "VERSION_TAG=v$NEW_VERSION" >> $GITHUB_ENV
+          
+          echo "VERSION_TAG=v$NEW_VERSION" >> $GITHUB_OUTPUT
 
       # Commit Changes
       - name: Commit Version Change
