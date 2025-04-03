@@ -19,11 +19,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Setup Build Directory
-      - name: Prepare Build Environment
-        run: |
-          mkdir -p "Soul-Shot/Builds/Windows"
-
       # Cache Library Folder
       - name: Cache Library Folder
         uses: actions/cache@v3
@@ -45,27 +40,29 @@ jobs:
           projectPath: "Soul-Shot"
           targetPlatform: StandaloneWindows64
           buildName: "Windows"
-          buildsPath: "Builds"
+          buildsPath: "Soul-Shot/Builds"
           customParameters: -logFile Build.log
 
-      # Debugging
-      - name: Show Build Log
-        if: always()
+      # Debugging: Check if build was created
+      - name: Debug Build Output
         run: |
-          echo "Build log:"
-          cat "Soul-Shot/Build.log" || echo "No log file found"
-          echo "Build artifacts:"
-          find "Soul-Shot/Builds" -type f
+          echo "Checking build directory..."
+          ls -R "Soul-Shot/Builds" || echo "No build directory found!"
 
       # Archive Build
       - name: Create Build Archive
         if: steps.unity-build.outcome == 'success'
         run: |
-          cd "Soul-Shot/Builds"
-          zip -r "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip" Windows/*
-          echo "BUILD_ZIP=game-build-${{ github.run_number }}.zip" >> $GITHUB_ENV
+          if [ -d "Soul-Shot/Builds/Windows" ]; then
+            cd "Soul-Shot/Builds"
+            zip -r "$GITHUB_WORKSPACE/game-build-${{ github.run_number }}.zip" Windows/*
+            echo "BUILD_ZIP=game-build-${{ github.run_number }}.zip" >> $GITHUB_ENV
+          else
+            echo "No build output found in Windows/ folder!"
+            exit 1
+          fi
 
-      # Upload single artifact
+      # Upload Build Artifact
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -79,15 +76,18 @@ jobs:
         run: |
           mkdir -p "Soul-Shot/Assets/Resources"
           GAME_VERSION_FILE="Soul-Shot/Assets/Resources/GameVersion.txt"
-          [ -f "$GAME_VERSION_FILE" ] || echo "1.0.0" > "$GAME_VERSION_FILE"
+          
+          # If file doesn't exist, initialize it
+          if [ ! -f "$GAME_VERSION_FILE" ]; then
+            echo "1.0.0" > "$GAME_VERSION_FILE"
+          fi
+
           CURRENT_VERSION=$(cat "$GAME_VERSION_FILE")
-          NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. -v OFS=. '{
-            if(NF==3){$3+=1}
-            print $0
-          }')
+          NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. -v OFS=. '{$NF += 1; print}')
+          
           echo "$NEW_VERSION" > "$GAME_VERSION_FILE"
-          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "VERSION_TAG=v$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "VERSION_TAG=v$NEW_VERSION" >> $GITHUB_ENV
 
       # Commit Changes
       - name: Commit Version Change
@@ -97,7 +97,7 @@ jobs:
           git fetch origin
           git rebase origin/main
           git add "Soul-Shot/Assets/Resources/GameVersion.txt"
-          git commit -m "[CI] Update version to ${{ steps.version.outputs.NEW_VERSION }}"
+          git commit -m "[CI] Update version to ${{ env.NEW_VERSION }}"
           git push origin main
 
   release:
@@ -116,9 +116,9 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ needs.build.outputs.version_tag }}
-          name: "Release ${{ needs.build.outputs.version_tag }}"
-          body: "Automated build for version ${{ needs.build.outputs.version_tag }}"
+          tag_name: ${{ env.VERSION_TAG }}
+          name: "Release ${{ env.VERSION_TAG }}"
+          body: "Automated build for version ${{ env.VERSION_TAG }}"
           files: release-files/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
