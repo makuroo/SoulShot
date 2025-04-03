@@ -105,12 +105,13 @@ jobs:
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
-          
+
           # Fetch latest changes and auto-stash any unstaged changes
           git pull --rebase --autostash origin main
-          
+
+          NEW_VERSION=$(cat Soul-Shot/Assets/Resources/GameVersion.txt)  # Read version from file
           git add "Soul-Shot/Assets/Resources/GameVersion.txt"
-          git commit -m "[CI] Update version to ${{ steps.version.outputs.NEW_VERSION }}"
+          git commit -m "[CI] Update version to $NEW_VERSION"
           git push origin main
 
   release:
