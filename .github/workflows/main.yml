@@ -62,6 +62,13 @@ jobs:
             exit 1
           fi
 
+        # Debugging: Check if Unity actually built the game
+      - name: Debug Build Output
+        run: |
+          echo "Checking if Unity created the build..."
+          ls -R "Soul-Shot/Builds" || echo "No build directory found!"
+          find "Soul-Shot/Builds" -type f || echo "No files found in Builds!"
+
       # Upload Build Artifact
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
